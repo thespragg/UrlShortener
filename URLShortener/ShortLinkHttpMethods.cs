@@ -1,5 +1,7 @@
+using System.Text.Json;
 using UrlShortener.DAL;
 using UrlShortener.DAL.Models;
+using UrlShortener.Models;
 using UrlShortener.Utils;
 
 namespace UrlShortener;
@@ -31,8 +33,17 @@ public static class ShortLinkHttpMethods
     {
         var db = ctx.RequestServices.GetRequiredService<IShortenerDataContext>();
         var url = db.Find(shortCode);
+        if(url != null) UpdateAccessedStats(url, db);
         // If the specified code wasn't found we'd redirect to a 404 page or the homepage
         ctx.Response.Redirect(url?.RemoteUrl ?? "/");
+    }
+
+    private static void UpdateAccessedStats(ShortLink? link, IShortenerDataContext db)
+    {
+        if (link == null) return;
+        var data = new List<DateTime>(link.Accessed) { DateTime.Now };
+        link.AccessedSerialised = JsonSerializer.Serialize(data);
+        db.Update(link);
     }
 
     public static async Task<IResult> UpdateShortCode(string shortCode, string url, HttpContext ctx)
@@ -55,5 +66,14 @@ public static class ShortLinkHttpMethods
         if (url == null) return Results.NotFound("The provided shortcode was not found.");
         db.Delete(shortCode);
         return Results.Ok("Deleted successfully.");
+    }
+
+    public static IResult GetAccessStats(string shortCode, HttpContext ctx)
+    {
+        var db = ctx.RequestServices.GetRequiredService<IShortenerDataContext>();
+        var url = db.Find(shortCode);
+        if (url == null) return Results.NotFound("The provided shortcode was not found.");
+        var stats = ShortLinkStats.FromDateList(url.Accessed);
+        return Results.Ok(stats);
     }
 }
