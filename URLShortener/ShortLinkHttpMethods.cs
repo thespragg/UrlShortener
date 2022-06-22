@@ -34,4 +34,17 @@ public static class ShortLinkHttpMethods
         // If the specified code wasn't found we'd redirect to a 404 page or the homepage
         ctx.Response.Redirect(url?.RemoteUrl ?? "/");
     }
+
+    public static async Task<IResult> UpdateShortCode(string shortCode, string url, HttpContext ctx)
+    {
+        if (!UrlValidation.IsUrlFormatValid(url)) return Results.BadRequest("The provided URL was not in the correct format");
+        if (!(await UrlValidation.IsUrlAccessibleAsync(url))) return Results.BadRequest("The url provided is offline or not accessible");
+
+        var db = ctx.RequestServices.GetRequiredService<IShortenerDataContext>();
+        var storedUrl = db.Find(shortCode);
+        if (storedUrl == null) return Results.NotFound("The provided short code doesn't match a known link.");
+        storedUrl.RemoteUrl = url;
+        storedUrl = db.Update(storedUrl);
+        return Results.Ok(storedUrl);
+    }
 }
