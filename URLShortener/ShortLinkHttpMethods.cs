@@ -47,4 +47,13 @@ public static class ShortLinkHttpMethods
         storedUrl = db.Update(storedUrl);
         return Results.Ok(storedUrl);
     }
+
+    public static IResult DeleteShortCode(string shortCode, HttpContext ctx)
+    {
+        var db = ctx.RequestServices.GetRequiredService<IShortenerDataContext>();
+        var url = db.Find(shortCode);
+        if (url == null) return Results.NotFound("The provided shortcode was not found.");
+        db.Delete(shortCode);
+        return Results.Ok("Deleted successfully.");
+    }
 }
