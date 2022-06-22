@@ -26,4 +26,12 @@ public static class ShortLinkHttpMethods
         db.Insert(shortLink);
         return Results.Ok(shortLink);
     }
+
+    public static void RedirectToShortCode(string shortCode, HttpContext ctx)
+    {
+        var db = ctx.RequestServices.GetRequiredService<IShortenerDataContext>();
+        var url = db.Find(shortCode);
+        // If the specified code wasn't found we'd redirect to a 404 page or the homepage
+        ctx.Response.Redirect(url?.RemoteUrl ?? "/");
+    }
 }
