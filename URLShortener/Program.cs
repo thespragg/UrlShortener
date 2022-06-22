@@ -1,6 +1,10 @@
+using UrlShortener;
+using UrlShortener.DAL;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<IShortenerDataContext, SQLiteShortenerDataContext>();
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.MapPost("create", ShortLinkHttpMethods.CreateShortLink);
 
 app.Run();
